@@ -1,14 +1,15 @@
 from Int3_1_automaton import Automaton
 
-Nombre_automata = 8
+Nombre_automata = 44
 loop = True
 automata=[]  # list to store all automata
 
 # Load all automata at the start of the program
 for i in range(1, Nombre_automata + 1):
-    auto=Automaton()
-    auto.get_automaton_from_txt(f"automata/Int3-1-{i}.txt")
-    automata.append(auto)
+    if i != 32 and i != 33 and i != 34 and i != 35 and i != 36 and i != 37 and i != 38 :
+        auto=Automaton()
+        auto.get_automaton_from_txt(f"automata/Int3-1-{i}.txt")
+        automata.append(auto)
 print(f"{'Automaton':<10}{'Deterministic':<15}{'Complete':<10}{'Standard':<10}")
 
 # Iterate over each automaton
@@ -35,16 +36,17 @@ while loop:  # Loop the entire program
             #try:
             # Asks for the action wanted and calls the associated function
             user_input = int(input(" 1- Show the automaton specifications"
-                                   "\n 2- Deterministic verification"
-                                   "\n 3- Complete verification"
-                                   "\n 4- Standard verification"
-                                   "\n 5- Standardize automata"
-                                   "\n 6- Complete an determinize automata"
-                                   "\n 7- display graph"
-                                   "\n 8- completion"
-                                   "\n 9- determinization"
+                                   "\n 2 - Deterministic verification"
+                                   "\n 3 - Complete verification"
+                                   "\n 4 - Standard verification"
+                                   "\n 5 - Standardize automata"
+                                   "\n 6 - Complete an determinize automata"
+                                   "\n 7 - display graph"
+                                   "\n 8 - completion"
+                                   "\n 9 - determinization"
+                                   "\n 10- minimisation"
                                    "\nChoose an action:"))
-            if 1 <= user_input <= 9:
+            if 1 <= user_input <= 10:
                 print(f"\n\n--- Automaton #{auto_nbr}")
                 if user_input == 1:
                     auto.show_automaton()
@@ -81,6 +83,10 @@ while loop:  # Loop the entire program
                 elif user_input == 9:
                     auto.determinize()
                     print("The automaton is now determinized")
+                elif user_input == 10:
+                    auto.show_automaton()
+                    auto.minimize()
+                    print("The automaton is now minimized")
                 break
             else:
                 print("Invalid input. Please enter a number between 1 and 44.")

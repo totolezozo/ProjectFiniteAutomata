@@ -50,12 +50,11 @@ class Automaton:
 
         # Convertit l'ensemble en liste et le retourne
         self.list_state = list(states)
-
+################################################
+    #a verifier#
     def is_deterministic(self):
         # Initialize variables
         transition={}
-
-        # Create a dictionary where each key is a tuple (start_state, symbol)
         # and each value is a list of end states
         for start_state, symbol, end_state in self.transitions:
             if (start_state, symbol) in transition:
@@ -76,8 +75,19 @@ class Automaton:
         return True
 
     def is_complete(self):
+        self.get_all_states()
+
+        starter_states=set()
+
+        # Parcoure les transitions
+        for transition in self.transitions:
+            if transition[ 0 ] not in starter_states:
+                starter_states.add(str(transition[ 0 ]))
+
+        # Convertit l'ensemble en liste et le retourne
+        self.list_state=list(starter_states)
         # Check if there's a transition for every state and input symbol
-        for state in self.list_state:
+        for state in starter_states:
             for symbol in self.alphabet:
                 if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
                     return False
@@ -293,41 +303,45 @@ class Automaton:
     def set_initial(self, state):
         self.init_states.append(state)
 
+    # This function determinizes a given automaton. It uses the power-set construction algorithm.
+    # It starts with the initial state and iteratively processes new states and transitions until no new states can be found.
+    # For each state and each letter in the alphabet, it finds all possible transitions and combines the end states into a new state.
+    # If the new state has not been processed or scheduled for processing, it is added to the list of states to be processed.
+    # The function updates the transitions and the number of states of the automaton.
     def determinize(self):
-        print("\nAutomata before determinizing\n")
-        self.show_automaton()
-        state_to_deal_with = self.init_states
-        new_transition = []
-        while state_to_deal_with != []:
-            # Initialiser une liste pour stocker les nouveaux états
-            state_in_treatment_transition_s = []
-            state_in_treatment = state_to_deal_with[0]
+        print("Starting determinization...")
+        state_dealt_with=[ ]
+        state_to_deal_with=self.init_states
+        new_transition=[ ]
+        while state_to_deal_with != [ ]:
+            print("States to deal with:", state_to_deal_with)
+            state_in_treatment_transition_s=[ ]
+            state_in_treatment=state_to_deal_with[ 0 ]
+            print("State in treatment:", state_in_treatment)
             for start_state, symbol, end_state in self.transitions:
-                print('if',start_state,'in',state_in_treatment[0])
-                if start_state in state_in_treatment[0] :
+                if start_state in state_in_treatment[ 0 ]:
                     state_in_treatment_transition_s.append((start_state, symbol, end_state))
-            for letter in self.alphabet :
-                transition_to_add = [state_in_treatment, letter, '']
-                for starter,symb,ender in state_in_treatment_transition_s :
-                    if symb == letter :
-                        if len(transition_to_add[2]) != 0 :
-                            transition_to_add[2] = transition_to_add[2]+','+ender
-                        else :
-                            transition_to_add[ 2 ] = ender
-
-                new_transition.append(tuple(transition_to_add))  # Convertir la liste en tuple avant de l'ajouter à new_transition
-                if transition_to_add[ 2 ] not in state_to_deal_with:
-                    state_to_deal_with.append(transition_to_add[ 2 ])
-                if transition_to_add[ 0 ] in state_to_deal_with:
-                    print(state_to_deal_with, '\nremoving\n', transition_to_add[ 0 ])
-                    state_to_deal_with.remove(transition_to_add[ 0 ])
-
-            # Mettre à jour les transitions
-        self.transitions = new_transition
-        # Mettre à jour le nombre d'états
+            print("State in treatment transitions:", state_in_treatment_transition_s)
+            for letter in self.alphabet:
+                transition_to_add=[ state_in_treatment, letter, '' ]
+                for starter, symb, ender in state_in_treatment_transition_s:
+                    if symb == letter:
+                        if len(transition_to_add[ 2 ]) != 0:
+                            transition_to_add[ 2 ]=transition_to_add[ 2 ] + ',' + ender
+                        else:
+                            transition_to_add[ 2 ]=ender
+                print("Transition to add:", transition_to_add)
+                if transition_to_add[ 2 ] != '':
+                    new_transition.append(tuple(transition_to_add))
+                    if transition_to_add[ 2 ] not in state_to_deal_with and transition_to_add[
+                        2 ] not in state_dealt_with:
+                        state_to_deal_with.append(transition_to_add[ 2 ])
+            state_to_deal_with.remove(transition_to_add[ 0 ])
+            state_dealt_with.append(transition_to_add[ 0 ])
+            print("States dealt with:", state_dealt_with)
+        self.transitions=new_transition
         self.get_all_states()
-        self.nbr_states = len(self.list_state)
-        # Afficher les spécifications de l'automate
-        print("\nAutomata after determinizing\n")
-        print("IL FAUT CHANGER init & final !!")
-        self.show_automaton()
+        self.nbr_states=len(self.list_state)
+        print("Determinization completed. New transitions:", self.transitions)
+        print("New number of states:", self.nbr_states)
+

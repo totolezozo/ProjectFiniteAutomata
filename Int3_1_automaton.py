@@ -1,6 +1,6 @@
-
 import networkx as nx
 import matplotlib.pyplot as plt
+
 
 class Automaton:
     alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
@@ -10,8 +10,9 @@ class Automaton:
     init_states = []
     final_states = []
     transitions = []
-    transition_table=[]
-    def get_automaton_from_txt(self, automaton_txt):  # Get the automaton from a given text file
+    transition_table = []
+
+    def get_from_txt(self, automaton_txt):  # Get the automaton from a given text file
         # Open the file and get the data
         auto_infos = [line.strip() for line in open(automaton_txt)]
 
@@ -32,35 +33,37 @@ class Automaton:
         self.final_states = [part for part in string_parts]
 
         for i in auto_infos[5:]:
-            self.transitions.append((i[0],i[1],i[2]))
+            self.transitions.append((i[0], i[1], i[2]))
 
-    def show_automaton(self):  # Print the specifications of the automaton
-        print(f"Specifications:\n - Alphabet: {self.alphabet}\n - Number of state(s): {self.nbr_states}\n - Initial state(s) {self.init_states}\n - Final state(s) {self.final_states}\n - List of the transition(s): {self.transitions}")
+    def show(self):  # Print the specifications of the automaton
+        print(
+            f"Specifications:\n - Alphabet: {self.alphabet}\n - Number of state(s): {self.nbr_states}\n - Initial state(s) {self.init_states}\n - Final state(s) {self.final_states}\n - List of the transition(s): {self.transitions}")
 
     def get_all_states(self):
         # Initialise un ensemble vide pour stocker les états
-        states=set()
+        states = set()
 
         # Parcoure les transitions
         for transition in self.transitions:
-            if transition[0] not in states :
-                states.add(str(transition[ 0 ]))
-            if transition[2] not in states :
-                states.add(str(transition[ 2 ]))
+            if transition[0] not in states:
+                states.add(str(transition[0]))
+            if transition[2] not in states:
+                states.add(str(transition[2]))
 
         # Convertit l'ensemble en liste et le retourne
         self.list_state = list(states)
-################################################
-    #a verifier#
+
     def is_deterministic(self):
         # Initialize variables
-        transition={}
+        transition = {}
+
+        # Create a dictionary where each key is a tuple (start_state, symbol)
         # and each value is a list of end states
         for start_state, symbol, end_state in self.transitions:
             if (start_state, symbol) in transition:
-                transition[ (start_state, symbol) ].append(end_state)
+                transition[(start_state, symbol)].append(end_state)
             else:
-                transition[ (start_state, symbol) ]=[ end_state ]
+                transition[(start_state, symbol)] = [end_state]
 
         # Check if it has only one initial state
         if len(self.init_states) != 1:
@@ -75,21 +78,10 @@ class Automaton:
         return True
 
     def is_complete(self):
-        self.get_all_states()
-
-        starter_states=set()
-
-        # Parcoure les transitions
-        for transition in self.transitions:
-            if transition[ 0 ] not in starter_states:
-                starter_states.add(str(transition[ 0 ]))
-
-        # Convertit l'ensemble en liste et le retourne
-        self.list_state=list(starter_states)
         # Check if there's a transition for every state and input symbol
-        for state in starter_states:
+        for state in self.list_state:
             for symbol in self.alphabet:
-                if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
+                if not any(t[0] == state and t[1] == symbol for t in self.transitions):
                     return False
         # Otherwise it is complete
         return True
@@ -112,7 +104,7 @@ class Automaton:
         # Vérifier si un des états initiaux a une boucle sur lui-même
         for state in self.init_states:
             for transition in self.transitions:
-                if transition[ 0 ] == state and transition[ 2 ] == state:
+                if transition[0] == state and transition[2] == state:
                     return False
         return True
 
@@ -123,20 +115,20 @@ class Automaton:
                 return
 
             # Ajouter un nouvel état initial
-            self.nbr_states+=1
-            new_init_state= 'i'
+            self.nbr_states += 1
+            new_init_state = 'i'
 
             # Copier les transitions des anciens états initiaux
-            old_transitions=self.transitions.copy()
+            old_transitions = self.transitions.copy()
             for state, symbol, next_state in old_transitions:
                 if state in self.init_states:
                     self.transitions.append((new_init_state, symbol, next_state))
 
             # Mettre à jour les états initiaux
-            self.init_states=[ new_init_state ]
+            self.init_states = [new_init_state]
 
             if not self.is_standard():
-                print("Erreur lors de la standardisation")
+                print("Error during the standardization")
 
     def completion(self):
         # If the automaton is not complete, add a new state
@@ -147,12 +139,12 @@ class Automaton:
             # Add missing transitions for each state and each symbol
             for state in range(self.nbr_states):
                 for symbol in self.alphabet:
-                    if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
+                    if not any(t[0] == state and t[1] == symbol for t in self.transitions):
                         self.transitions.append(('p', symbol, 'p'))
 
-            self.nbr_states+=1
+            self.nbr_states += 1
 
-    def determinization_and_completion_of_automaton(self):
+    def determinization_and_completion(self):
         # If the automaton is not deterministic, apply the determinization algorithm
         if not self.is_deterministic():
             self.determinize()
@@ -160,7 +152,7 @@ class Automaton:
         if not self.is_complete():
             self.completion()
 
-    def display_automaton_graph(self):
+    def display_graph(self):
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.list_state)
         edge_labels = {}
@@ -186,11 +178,6 @@ class Automaton:
         nx.draw(G, pos, with_labels=True, node_color=node_colors, node_size=1200)
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
         plt.show()
-
-
-
-
-
 
     def construct_from_partition(self, partition):
         # Create a new transition table
@@ -254,7 +241,6 @@ class Automaton:
             for state in subset:
                 print(state)
 
-
         # Step 2: Iteratively refine the partition
         print("step 2")
         while True:
@@ -283,16 +269,12 @@ class Automaton:
                         print(f"  On symbol {symbol}, transitions to state {j}")
                         break
 
-
-
-
-
     def update_self(self, other):
-        self.alphabet=other.alphabet
-        self.nbr_states=other.nbr_states
-        self.init_states=other.init_states
-        self.final_states=other.final_states
-        self.transitions=other.transitions
+        self.alphabet = other.alphabet
+        self.nbr_states = other.nbr_states
+        self.init_states = other.init_states
+        self.final_states = other.final_states
+        self.transitions = other.transitions
 
     def add_transition(self, source, letter, target):
         self.transitions.append((source, letter, target))
@@ -303,45 +285,96 @@ class Automaton:
     def set_initial(self, state):
         self.init_states.append(state)
 
-    # This function determinizes a given automaton. It uses the power-set construction algorithm.
-    # It starts with the initial state and iteratively processes new states and transitions until no new states can be found.
-    # For each state and each letter in the alphabet, it finds all possible transitions and combines the end states into a new state.
-    # If the new state has not been processed or scheduled for processing, it is added to the list of states to be processed.
-    # The function updates the transitions and the number of states of the automaton.
     def determinize(self):
-        print("Starting determinization...")
-        state_dealt_with=[ ]
-        state_to_deal_with=self.init_states
-        new_transition=[ ]
-        while state_to_deal_with != [ ]:
-            print("States to deal with:", state_to_deal_with)
-            state_in_treatment_transition_s=[ ]
-            state_in_treatment=state_to_deal_with[ 0 ]
-            print("State in treatment:", state_in_treatment)
+        print("\nAutomata before determinizing\n")
+        self.show()
+        state_to_deal_with = self.init_states
+        new_transition = []
+        while state_to_deal_with:
+            # Initialiser une liste pour stocker les nouveaux états
+            state_in_treatment_transition_s = []
+            state_in_treatment = state_to_deal_with[0]
             for start_state, symbol, end_state in self.transitions:
-                if start_state in state_in_treatment[ 0 ]:
+                print('if', start_state, 'in', state_in_treatment[0])
+                if start_state in state_in_treatment[0]:
                     state_in_treatment_transition_s.append((start_state, symbol, end_state))
-            print("State in treatment transitions:", state_in_treatment_transition_s)
             for letter in self.alphabet:
-                transition_to_add=[ state_in_treatment, letter, '' ]
+                transition_to_add = [state_in_treatment, letter, '']
                 for starter, symb, ender in state_in_treatment_transition_s:
                     if symb == letter:
-                        if len(transition_to_add[ 2 ]) != 0:
-                            transition_to_add[ 2 ]=transition_to_add[ 2 ] + ',' + ender
+                        if len(transition_to_add[2]) != 0:
+                            transition_to_add[2] = transition_to_add[2] + ',' + ender
                         else:
-                            transition_to_add[ 2 ]=ender
-                print("Transition to add:", transition_to_add)
-                if transition_to_add[ 2 ] != '':
-                    new_transition.append(tuple(transition_to_add))
-                    if transition_to_add[ 2 ] not in state_to_deal_with and transition_to_add[
-                        2 ] not in state_dealt_with:
-                        state_to_deal_with.append(transition_to_add[ 2 ])
-            state_to_deal_with.remove(transition_to_add[ 0 ])
-            state_dealt_with.append(transition_to_add[ 0 ])
-            print("States dealt with:", state_dealt_with)
-        self.transitions=new_transition
-        self.get_all_states()
-        self.nbr_states=len(self.list_state)
-        print("Determinization completed. New transitions:", self.transitions)
-        print("New number of states:", self.nbr_states)
+                            transition_to_add[2] = ender
 
+                new_transition.append(
+                    tuple(transition_to_add))  # Convertir la liste en tuple avant de l'ajouter à new_transition
+                if transition_to_add[2] not in state_to_deal_with:
+                    state_to_deal_with.append(transition_to_add[2])
+                if transition_to_add[0] in state_to_deal_with:
+                    print(state_to_deal_with, '\nremoving\n', transition_to_add[0])
+                    state_to_deal_with.remove(transition_to_add[0])
+
+            # Mettre à jour les transitions
+        self.transitions = new_transition
+        # Mettre à jour le nombre d'états
+        self.get_all_states()
+        self.nbr_states = len(self.list_state)
+        # Afficher les spécifications de l'automate
+        print("\nAutomata after determinizing\n")
+        print("IL FAUT CHANGER init & final !!")
+        self.show()
+
+    def recognize_word(self, word):
+        current_states = set(self.init_states)
+
+        for letter in word:
+            next_states = set()
+
+            for state in current_states:
+                for transition in self.transitions:
+                    if transition[0] == state and transition[1] == letter:
+                        next_states.add(transition[2])
+
+            if not next_states:
+                return False  # If there are no transitions for the current letter, the word is not recognized
+
+            current_states = next_states
+
+        # Check if any of the current states are final states
+        if any(state in current_states for state in self.final_states):
+            return True
+        else:
+            return False
+
+    def create_complement(self):
+        # Invert final and non-final states
+        complement_final_states = list(set(self.list_state) - set(self.final_states))
+
+        # Create a new instance of Automaton
+        complement_automaton = Automaton()
+
+        # Update the attributes of the new automaton
+        complement_automaton.alphabet = self.alphabet
+        complement_automaton.nbr_states = self.nbr_states
+        complement_automaton.init_states = self.init_states
+        complement_automaton.final_states = complement_final_states
+
+        # Invert the transitions for non-final to final states and vice versa
+        complement_transitions = []
+        for transition in self.transitions:
+            start_state = transition[0]
+            letter = transition[1]
+            end_state = transition[2]
+
+            # If the start state is final and the end state is non-final, swap them
+            if start_state in self.final_states and end_state not in self.final_states:
+                complement_transitions.append((start_state, letter, end_state))
+
+            # If the start state is non-final and the end state is final, swap them
+            elif start_state not in self.final_states and end_state in self.final_states:
+                complement_transitions.append((start_state, letter, end_state))
+
+        complement_automaton.transitions = complement_transitions
+
+        return complement_automaton

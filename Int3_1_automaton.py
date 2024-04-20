@@ -6,6 +6,7 @@ class Automaton:
     alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
                 "v", "w", "x", "y", "z"]
     nbr_states = 0
+    list_state = []
     init_states = []
     final_states = []
     transitions = []
@@ -24,17 +25,31 @@ class Automaton:
 
         string_parts = auto_infos[2].split()
         string_parts.pop(0)
-        self.init_states = [int(part) for part in string_parts]
+        self.init_states = [part for part in string_parts]
 
         string_parts = auto_infos[3].split()
         string_parts.pop(0)
-        self.final_states = [int(part) for part in string_parts]
+        self.final_states = [part for part in string_parts]
 
         for i in auto_infos[5:]:
-            self.transitions.append((int(i[0]),i[1],int(i[2])))
+            self.transitions.append((i[0],i[1],i[2]))
 
     def show_automaton(self):  # Print the specifications of the automaton
         print(f"Specifications:\n - Alphabet: {self.alphabet}\n - Number of state(s): {self.nbr_states}\n - Initial state(s) {self.init_states}\n - Final state(s) {self.final_states}\n - List of the transition(s): {self.transitions}")
+
+    def get_all_states(self):
+        # Initialise un ensemble vide pour stocker les états
+        states=set()
+
+        # Parcoure les transitions
+        for transition in self.transitions:
+            if transition[0] not in states :
+                states.add(str(transition[ 0 ]))
+            if transition[2] not in states :
+                states.add(str(transition[ 2 ]))
+
+        # Convertit l'ensemble en liste et le retourne
+        self.list_state = list(states)
 
     def is_deterministic(self):
         # Initialize variables
@@ -62,7 +77,7 @@ class Automaton:
 
     def is_complete(self):
         # Check if there's a transition for every state and input symbol
-        for state in range(self.nbr_states):
+        for state in self.list_state:
             for symbol in self.alphabet:
                 if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
                     return False
@@ -70,6 +85,19 @@ class Automaton:
         # Otherwise it is complete
         return True
 
+    def is_standard(self):
+        # Check if it has only one entry
+        if len(self.init_states) != 1:
+            return False
+
+        # Check if there are no transitions arriving at the initial state
+        initial_state = self.init_states[0]
+        for transition in self.transitions:
+            if transition[2] == initial_state:
+                return False
+
+        # Otherwise, it is standard
+        return True
 
     def is_standardizable(self):
         # Vérifier si un des états initiaux a une boucle sur lui-même
@@ -87,7 +115,7 @@ class Automaton:
 
             # Ajouter un nouvel état initial
             self.nbr_states+=1
-            new_init_state=self.nbr_states
+            new_init_state= 'i'
 
             # Copier les transitions des anciens états initiaux
             old_transitions=self.transitions.copy()
@@ -106,51 +134,15 @@ class Automaton:
         if not self.is_complete():
             # Add missing transitions to the trash state
             for symbol in self.alphabet:
-                self.transitions.append((self.nbr_states, symbol, self.nbr_states))
+                self.transitions.append(('p', symbol, 'p'))
             # Add missing transitions for each state and each symbol
             for state in range(self.nbr_states):
                 for symbol in self.alphabet:
                     if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
-                        self.transitions.append((state, symbol, self.nbr_states))
+                        self.transitions.append(('p', symbol, 'p'))
 
             self.nbr_states+=1
 
-
-
-    def determinize(self):
-        # Prepare for Conversion
-        edges=set()
-        reference_table={}
-        for transition in self.transitions:
-            state, edge, next_state=transition[ 0 ], transition[ 1 ], transition[ 2: ]
-            edges.add(edge)
-            reference_table[ (state, edge) ]=next_state
-
-        # Initialize DFA
-        dfa={(''.join(map(str, self.init_states)), edge): '' for edge in edges}
-        final_table={}
-
-        # Convert NFA to DFA
-        new_nodes=list(dfa.keys())
-        while new_nodes:
-            new_node=new_nodes.pop(0)
-            for edge in edges:
-                next_states=set()
-                for state in new_node[ 0 ]:
-                    if (state, edge) in reference_table:
-                        next_states.update(reference_table[ (state, edge) ])
-                next_states=''.join(sorted(next_states))
-                if next_states and next_states not in [ node[ 0 ] for node in new_nodes ]:
-                    new_nodes.append((next_states, edge))
-                dfa[ new_node, edge ]=next_states
-                final_table[ (new_node[ 0 ], edge) ]=next_states
-
-        # Modify the NFA to become a DFA
-        self.transitions=[ (state_edge[ 0 ], state_edge[ 1 ], next_state) for state_edge, next_state in
-                           final_table.items() ]
-        self.init_states=[ ''.join(self.init_states) ]
-        self.final_states=[ state for state in final_table.keys() if
-                            any(final_state in state[ 0 ] for final_state in self.final_states) ]
 
     def determinization_and_completion_of_automaton(self):
         # If the automaton is not deterministic, apply the determinization algorithm
@@ -162,12 +154,12 @@ class Automaton:
 
     def display_automaton_graph(self):
         G = nx.MultiDiGraph()
-        G.add_nodes_from(range(self.nbr_states))
+        G.add_nodes_from(self.list_state)
         edge_labels = {}
         for transition in self.transitions:
-            start_state = int(transition[0])
+            start_state = transition[0]
             symbol = transition[1]
-            end_state = int(transition[2])
+            end_state = transition[2]
             G.add_edge(start_state, end_state)
             edge_labels[(start_state, end_state)] = symbol
 
@@ -202,7 +194,7 @@ class Automaton:
 
             # Create a new row in the transition table for this partition
             new_row = []
-            for symbol in range(self.nbr_symbols):
+            for symbol in range(len(self.alphabet)):
                 next_state = self.transition_table[representative][symbol]
 
                 # Find which partition the next state belongs to
@@ -282,3 +274,66 @@ class Automaton:
                     if next_state in part2:
                         print(f"  On symbol {symbol}, transitions to state {j}")
                         break
+
+    def update_self(self, other):
+        self.alphabet=other.alphabet
+        self.nbr_states=other.nbr_states
+        self.init_states=other.init_states
+        self.final_states=other.final_states
+        self.transitions=other.transitions
+
+    def add_transition(self, source, letter, target):
+        self.transitions.append((source, letter, target))
+
+    def set_final(self, state):
+        self.final_states.append(state)
+
+    def set_initial(self, state):
+        self.init_states.append(state)
+
+    def determinize(self):
+        print("\nAutomata before determinizing\n")
+        self.show_automaton()
+        # Initialiser un dictionnaire pour stocker les nouveaux états
+        new_states={}
+
+        # Initialiser une liste pour stocker les transitions à supprimer
+        to_remove=[ ]
+
+        # Parcourir les transitions
+        for start_state, symbol, end_state in self.transitions:
+            # S'il y a déjà une transition depuis l'état de départ avec le même symbole
+            if (start_state, symbol) in new_states:
+                # Ajouter l'état d'arrivée au nouvel état
+                new_states[ (start_state, symbol) ].add(end_state)
+
+                # Ajouter la transition à la liste des transitions à supprimer
+                to_remove.append((start_state, symbol, end_state))
+            else:
+                # Créer un nouvel état avec l'état d'arrivée
+                new_states[ (start_state, symbol) ]=set([ end_state ])
+
+        # Supprimer les anciennes transitions
+        for transition in to_remove:
+            self.transitions.remove(transition)
+
+        # Ajouter les nouvelles transitions
+        for (start_state, symbol), end_states in new_states.items():
+            # Créer un nouvel état en concaténant les états d'arrivée
+            new_state=int(''.join(map(str, end_states)))
+
+            # Ajouter la nouvelle transition
+            self.transitions.append((start_state, symbol, new_state))
+
+            # Si le nouvel état contient un état final, l'ajouter aux états finaux
+            if any(end_state in self.final_states for end_state in end_states):
+                self.final_states.append(new_state)
+
+        # Mettre à jour le nombre d'états
+        #self.nbr_states=max(max(start_state, end_state) for start_state, _, end_state in self.transitions) + 1
+        self.nbr_states = len(self.list_state)
+
+        # Afficher les spécifications de l'automate
+        print("\nAutomata after determinizing\n")
+        self.show_automaton()
+

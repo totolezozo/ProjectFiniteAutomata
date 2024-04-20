@@ -81,7 +81,6 @@ class Automaton:
             for symbol in self.alphabet:
                 if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
                     return False
-
         # Otherwise it is complete
         return True
 
@@ -142,7 +141,6 @@ class Automaton:
                         self.transitions.append(('p', symbol, 'p'))
 
             self.nbr_states+=1
-
 
     def determinization_and_completion_of_automaton(self):
         # If the automaton is not deterministic, apply the determinization algorithm
@@ -275,6 +273,10 @@ class Automaton:
                         print(f"  On symbol {symbol}, transitions to state {j}")
                         break
 
+
+
+
+
     def update_self(self, other):
         self.alphabet=other.alphabet
         self.nbr_states=other.nbr_states
@@ -294,46 +296,38 @@ class Automaton:
     def determinize(self):
         print("\nAutomata before determinizing\n")
         self.show_automaton()
-        # Initialiser un dictionnaire pour stocker les nouveaux états
-        new_states={}
+        state_to_deal_with = self.init_states
+        new_transition = []
+        while state_to_deal_with != []:
+            # Initialiser une liste pour stocker les nouveaux états
+            state_in_treatment_transition_s = []
+            state_in_treatment = state_to_deal_with[0]
+            for start_state, symbol, end_state in self.transitions:
+                print('if',start_state,'in',state_in_treatment[0])
+                if start_state in state_in_treatment[0] :
+                    state_in_treatment_transition_s.append((start_state, symbol, end_state))
+            for letter in self.alphabet :
+                transition_to_add = [state_in_treatment, letter, '']
+                for starter,symb,ender in state_in_treatment_transition_s :
+                    if symb == letter :
+                        if len(transition_to_add[2]) != 0 :
+                            transition_to_add[2] = transition_to_add[2]+','+ender
+                        else :
+                            transition_to_add[ 2 ] = ender
 
-        # Initialiser une liste pour stocker les transitions à supprimer
-        to_remove=[ ]
+                new_transition.append(tuple(transition_to_add))  # Convertir la liste en tuple avant de l'ajouter à new_transition
+                if transition_to_add[ 2 ] not in state_to_deal_with:
+                    state_to_deal_with.append(transition_to_add[ 2 ])
+                if transition_to_add[ 0 ] in state_to_deal_with:
+                    print(state_to_deal_with, '\nremoving\n', transition_to_add[ 0 ])
+                    state_to_deal_with.remove(transition_to_add[ 0 ])
 
-        # Parcourir les transitions
-        for start_state, symbol, end_state in self.transitions:
-            # S'il y a déjà une transition depuis l'état de départ avec le même symbole
-            if (start_state, symbol) in new_states:
-                # Ajouter l'état d'arrivée au nouvel état
-                new_states[ (start_state, symbol) ].add(end_state)
-
-                # Ajouter la transition à la liste des transitions à supprimer
-                to_remove.append((start_state, symbol, end_state))
-            else:
-                # Créer un nouvel état avec l'état d'arrivée
-                new_states[ (start_state, symbol) ]=set([ end_state ])
-
-        # Supprimer les anciennes transitions
-        for transition in to_remove:
-            self.transitions.remove(transition)
-
-        # Ajouter les nouvelles transitions
-        for (start_state, symbol), end_states in new_states.items():
-            # Créer un nouvel état en concaténant les états d'arrivée
-            new_state=int(''.join(map(str, end_states)))
-
-            # Ajouter la nouvelle transition
-            self.transitions.append((start_state, symbol, new_state))
-
-            # Si le nouvel état contient un état final, l'ajouter aux états finaux
-            if any(end_state in self.final_states for end_state in end_states):
-                self.final_states.append(new_state)
-
+            # Mettre à jour les transitions
+        self.transitions = new_transition
         # Mettre à jour le nombre d'états
-        #self.nbr_states=max(max(start_state, end_state) for start_state, _, end_state in self.transitions) + 1
+        self.get_all_states()
         self.nbr_states = len(self.list_state)
-
         # Afficher les spécifications de l'automate
         print("\nAutomata after determinizing\n")
+        print("IL FAUT CHANGER init & final !!")
         self.show_automaton()
-

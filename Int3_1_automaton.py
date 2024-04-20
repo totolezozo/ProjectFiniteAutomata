@@ -70,34 +70,36 @@ class Automaton:
         # Otherwise it is complete
         return True
 
-    def is_standard(self):
-        # Check if it has only one entry
-        if len(self.init_states) != 1:
-            return False
 
-        # Check if there are no transitions arriving at the initial state
-        initial_state = self.init_states[0]
-        for transition in self.transitions:
-            if transition[1] == initial_state:
-                return False
-
-        # Otherwise, it is standard
+    def is_standardizable(self):
+        # Vérifier si un des états initiaux a une boucle sur lui-même
+        for state in self.init_states:
+            for transition in self.transitions:
+                if transition[ 0 ] == state and transition[ 2 ] == state:
+                    return False
         return True
 
     def standardize(self):
         if not self.is_standard():
+            if not self.is_standardizable():
+                print("Cet automate n'est pas standardisable par notre algorithme.")
+                return
+
             # Ajouter un nouvel état initial
             self.nbr_states+=1
             new_init_state=self.nbr_states
-            # Ajouter des transitions du nouvel état initial vers les anciens états initiaux
-            for symbol in self.alphabet:
-                for state in self.init_states:
-                    self.transitions.append((new_init_state, symbol, state))
+
+            # Copier les transitions des anciens états initiaux
+            old_transitions=self.transitions.copy()
+            for state, symbol, next_state in old_transitions:
+                if state in self.init_states:
+                    self.transitions.append((new_init_state, symbol, next_state))
+
             # Mettre à jour les états initiaux
             self.init_states=[ new_init_state ]
-            if not self.is_standard():
-                print("error of standardization")
 
+            if not self.is_standard():
+                print("Erreur lors de la standardisation")
 
     def completion(self):
         # If the automaton is not complete, add a new state

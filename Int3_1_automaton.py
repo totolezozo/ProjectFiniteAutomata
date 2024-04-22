@@ -35,6 +35,8 @@ class Automaton:
         for i in auto_infos[5:]:
             self.transitions.append((i[0], i[1], i[2]))
 
+        self.get_all_states() # ad on 21/04
+
     def show(self):  # Print the specifications of the automaton
         print(
             f"Specifications:\n - Alphabet: {self.alphabet}\n - Number of state(s): {self.nbr_states}\n - Initial state(s) {self.init_states}\n - Final state(s) {self.final_states}\n - List of the transition(s): {self.transitions}")
@@ -78,10 +80,19 @@ class Automaton:
         return True
 
     def is_complete(self):
+        self.get_all_states()
+
+        starter_states=set()
+
+        # go throught transitions
+        for transition in self.transitions:
+            if transition[ 0 ] not in starter_states:
+                starter_states.add(str(transition[ 0 ]))
+        self.list_state=list(starter_states)
         # Check if there's a transition for every state and input symbol
-        for state in self.list_state:
+        for state in starter_states:
             for symbol in self.alphabet:
-                if not any(t[0] == state and t[1] == symbol for t in self.transitions):
+                if not any(t[ 0 ] == state and t[ 1 ] == symbol for t in self.transitions):
                     return False
         # Otherwise it is complete
         return True
@@ -111,7 +122,7 @@ class Automaton:
     def standardize(self):
         if not self.is_standard():
             if not self.is_standardizable():
-                print("Cet automate n'est pas standardisable par notre algorithme.")
+                print("this automata is not stanardizable by our algorithm.")
                 return
 
             # Ajouter un nouvel état initial
@@ -137,10 +148,10 @@ class Automaton:
             for symbol in self.alphabet:
                 self.transitions.append(('p', symbol, 'p'))
             # Add missing transitions for each state and each symbol
-            for state in range(self.nbr_states):
+            for state in self.list_state:
                 for symbol in self.alphabet:
                     if not any(t[0] == state and t[1] == symbol for t in self.transitions):
-                        self.transitions.append(('p', symbol, 'p'))
+                        self.transitions.append((state, symbol, 'p'))
 
             self.nbr_states += 1
 
@@ -286,44 +297,37 @@ class Automaton:
         self.init_states.append(state)
 
     def determinize(self):
-        print("\nAutomata before determinizing\n")
+        print("Starting determinization...")
         self.show()
-        state_to_deal_with = self.init_states
-        new_transition = []
-        while state_to_deal_with:
-            # Initialiser une liste pour stocker les nouveaux états
-            state_in_treatment_transition_s = []
-            state_in_treatment = state_to_deal_with[0]
+        state_dealt_with=[ ]
+        state_to_deal_with=self.init_states
+        new_transition=[ ]
+        while state_to_deal_with != [ ]:
+            state_in_treatment_transition_s=[ ]
+            state_in_treatment=state_to_deal_with[ 0 ]
+            print("State in treatment:", state_in_treatment)
             for start_state, symbol, end_state in self.transitions:
-                print('if', start_state, 'in', state_in_treatment[0])
-                if start_state in state_in_treatment[0]:
+                if start_state in state_in_treatment[ 0 ]:
                     state_in_treatment_transition_s.append((start_state, symbol, end_state))
             for letter in self.alphabet:
-                transition_to_add = [state_in_treatment, letter, '']
+                transition_to_add= [ state_in_treatment, letter, '' ]
                 for starter, symb, ender in state_in_treatment_transition_s:
                     if symb == letter:
-                        if len(transition_to_add[2]) != 0:
-                            transition_to_add[2] = transition_to_add[2] + ',' + ender
+                        if len(transition_to_add[ 2 ]) != 0:
+                            transition_to_add[ 2 ]=transition_to_add[ 2 ] + ',' + ender
                         else:
-                            transition_to_add[2] = ender
-
-                new_transition.append(
-                    tuple(transition_to_add))  # Convertir la liste en tuple avant de l'ajouter à new_transition
-                if transition_to_add[2] not in state_to_deal_with:
-                    state_to_deal_with.append(transition_to_add[2])
-                if transition_to_add[0] in state_to_deal_with:
-                    print(state_to_deal_with, '\nremoving\n', transition_to_add[0])
-                    state_to_deal_with.remove(transition_to_add[0])
-
-            # Mettre à jour les transitions
-        self.transitions = new_transition
-        # Mettre à jour le nombre d'états
+                            transition_to_add[ 2 ]=ender
+                if transition_to_add[ 2 ] != '':
+                    new_transition.append(tuple(transition_to_add))
+                    if transition_to_add[ 2 ] not in state_to_deal_with and transition_to_add[2 ] not in state_dealt_with:
+                        state_to_deal_with.append(transition_to_add[ 2 ])
+            state_to_deal_with.remove(transition_to_add[ 0 ])
+            state_dealt_with.append(transition_to_add[ 0 ])
+            print("States dealt with:", state_dealt_with)
+        self.transitions=new_transition
         self.get_all_states()
-        self.nbr_states = len(self.list_state)
-        # Afficher les spécifications de l'automate
-        print("\nAutomata after determinizing\n")
-        print("IL FAUT CHANGER init & final !!")
-        self.show()
+        self.nbr_states=len(self.list_state)
+        print("Determinization completed. New transitions:", self.transitions)
 
     def recognize_word(self, word):
         current_states = set(self.init_states)
